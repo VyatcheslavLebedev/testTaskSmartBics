@@ -2,13 +2,14 @@ package parrallelworkers;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-public class CurrentCallable implements Callable<Map<Date,Integer>> {
+public class CurrentCallable implements Callable<Map<LocalDateTime,Integer>> {
 
+    private static final String error = "ERROR";
     private final int numberFile;
 
     public CurrentCallable(int numberFile) {
@@ -16,22 +17,32 @@ public class CurrentCallable implements Callable<Map<Date,Integer>> {
     }
 
     @Override
-    public Map<Date,Integer> call() throws Exception {
+    public Map<LocalDateTime,Integer> call() throws Exception {
 
-        Map<Date,Integer> numberErrors = new HashMap<>();
+        Map<LocalDateTime,Integer> numberErrors = new HashMap<>();
 
-        try(BufferedReader bufferedReader = new BufferedReader(new FileReader("log" + numberFile + ".csv")) {
-
+        try(BufferedReader bufferedReader = new BufferedReader(new FileReader("logs"+numberFile+".csv"))){
             String line = bufferedReader.readLine();
-
-            while(line != null){
-                
+            int countByHours = 0;
+            LocalDateTime dateTime = LocalDateTime.MIN;
+            while(line!= null){
+                String[] tokens = line.split(";");
+                LocalDateTime time = null;
+                time.parse(tokens[0]);
+                time = time.minusMinutes(time.getMinute());
+                if((time.getHour() > dateTime.getHour()) || (time.getDayOfMonth() > dateTime.getDayOfMonth())){
+                    countByHours = 0;
+                }
+                if((time.getHour() == dateTime.getHour()) &&
+                        (time.getDayOfMonth() == dateTime.getDayOfMonth()) && (tokens[1].equals(error))){
+                    countByHours++;
+                }
+                line = bufferedReader.readLine();
             }
 
+
         }
-
         return numberErrors;
+
     }
-
-
 }
