@@ -23,15 +23,20 @@ public class CurrentCallable implements Callable<Map<LocalDateTime,Integer>> {
 
         try(BufferedReader bufferedReader = new BufferedReader(new FileReader("logs"+numberFile+".csv"))){
             String line = bufferedReader.readLine();
+            String[] tokens;
+            tokens = line.split(";");
             int countByHours = 0;
-            LocalDateTime dateTime = LocalDateTime.MIN;
+            LocalDateTime dateTime = null;
+            dateTime.parse(tokens[0]);
+            dateTime = dateTime.minusMinutes(dateTime.getMinute());
             while(line!= null){
-                String[] tokens = line.split(";");
+                tokens = line.split(";");
                 LocalDateTime time = null;
                 time.parse(tokens[0]);
                 time = time.minusMinutes(time.getMinute());
                 if((time.getHour() > dateTime.getHour()) || (time.getDayOfMonth() > dateTime.getDayOfMonth())){
                     countByHours = 0;
+                    dateTime = time;
                 }
                 if((time.getHour() == dateTime.getHour()) &&
                         (time.getDayOfMonth() == dateTime.getDayOfMonth()) && (tokens[1].equals(error))){
