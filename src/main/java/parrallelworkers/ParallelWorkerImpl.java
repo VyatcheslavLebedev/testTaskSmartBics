@@ -1,5 +1,6 @@
 package parrallelworkers;
 
+import java.awt.print.Book;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -17,38 +18,33 @@ public class ParallelWorkerImpl implements ParallelWorker{
         ExecutorService executorService = Executors.newFixedThreadPool(numberFiles);
         List<Future<Map<LocalDateTime,Integer>>> tasks = new LinkedList<>();
 
-        final Map<LocalDateTime,Integer> finalMap = new HashMap<>();
+        final Map<LocalDateTime,Integer> finalMap = new TreeMap<>();
 
-        for(int i = 0; i < numberFiles; i++){
+        for(int i = 1; i <= numberFiles; i++){
             Callable<Map<LocalDateTime,Integer>> task = new CurrentCallable(i);
             Future<Map<LocalDateTime,Integer>> future = executorService.submit(task);
             tasks.add(future);
         }
-
-        while(!tasks.isEmpty()){
-
-            Map<LocalDateTime, Integer> logsCurrentThread = null;
-
-
-            for(Future<Map<LocalDateTime,Integer>> x : tasks) {
-                if (x.isDone()) {
-                    logsCurrentThread = x.get();
-                    logsCurrentThread.forEach((key, value) -> finalMap.merge(key, value, (v1, v2) -> v1 + v2));
-
+        while(!tasks.isEmpty()) {
+            ListIterator<Future<Map<LocalDateTime, Integer>>> iter = tasks.listIterator();
+            while (iter.hasNext()) {
+                Future<Map<LocalDateTime,Integer>> future = iter.next();
+                if (future.isDone()) {
+                    Map<LocalDateTime, Integer> logsCurrentThread = future.get();
+                    logsCurrentThread.forEach(
+                            (key, value) -> finalMap.merge(key, value, (v1, v2) -> v1 + v2)
+                    );
+                    iter.remove();
                 }
-            }
+                }
 
-            if(logsCurrentThread != null) {
-                tasks.remove(logsCurrentThread);
             }
-        }
 
         executorService.shutdown();
 
-        Map<LocalDateTime,Integer> treeMap = new TreeMap<>(finalMap);
 
         WriteFile writeFile = new WriteFile();
-        writeFile.write(treeMap);
+        writeFile.write(finalMap);
     }
 }
 
